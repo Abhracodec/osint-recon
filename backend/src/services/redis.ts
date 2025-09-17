@@ -1,13 +1,14 @@
 import { createClient, RedisClientType } from 'redis';
 import { logger } from '../utils/logger';
+import { config } from '../utils/config';
 
 let redisClient: RedisClientType;
 
 export async function connectRedis(): Promise<RedisClientType> {
   try {
     redisClient = createClient({
-  url: "rediss://default:AR8fAAImcDEyOGE0ODRmZGMxYmM0ZTUyOTNhZTg0MDgyYjdmMGJkZHAxNzk2Nw@vast-emu-7967.upstash.io:6379"
-});
+      url: config.REDIS_URL,
+    });
 
     redisClient.on('error', (err) => {
       logger.error('Redis client error:', err);

@@ -9,11 +9,13 @@ let scanWorker: Worker;
 
 export async function setupJobQueue(): Promise<void> {
   try {
+    const redisUrl = new URL(config.REDIS_URL);
     const redisConnection = {
-      host: config.REDIS_URL.split('://')[1].split(':')[0],
-      port: parseInt(config.REDIS_URL.split(':')[2] || '6379'),
-      password: config.REDIS_PASSWORD,
-    };
+      host: redisUrl.hostname,
+      port: parseInt(redisUrl.port || '6379'),
+      password: redisUrl.password || config.REDIS_PASSWORD,
+      tls: redisUrl.protocol === 'rediss:',
+    } as any;
 
     // Create queue
     scanQueue = new Queue('osint-scan', {

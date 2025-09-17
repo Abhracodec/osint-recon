@@ -1,6 +1,5 @@
 // Load environment variables
 require('dotenv').config();
-import { parse } from 'url';
 
 interface Config {
   NODE_ENV: string;
@@ -10,7 +9,7 @@ interface Config {
   // Redis
   REDIS_HOST: string;
   REDIS_PORT: number;
-  REDIS_PASSWORD?: string;
+  REDIS_PASSWORD: string | undefined;
   REDIS_URL: string;
 
   // PostgreSQL
@@ -99,7 +98,7 @@ export const config: Config = {
   REDIS_HOST: process.env.REDIS_HOST || 'redis',
   REDIS_PORT: parseInt(process.env.REDIS_PORT || '6379', 10),
   REDIS_PASSWORD: process.env.REDIS_PASSWORD,
-  REDIS_URL: getRedisURL(),
+  REDIS_URL: process.env.REDIS_URL || getRedisURL(),
 
   // PostgreSQL
   DATABASE_URL: process.env.DATABASE_URL,
