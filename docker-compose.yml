@@ -1,0 +1,136 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: osint-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - osint-dev-network
+    command: ["redis-server", "--appendonly", "yes"]
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: osint-postgres-dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_DB: osint_recon_dev
+      POSTGRES_USER: osint_dev_user
+      POSTGRES_PASSWORD: dev_password
+    networks:
+      - osint-dev-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: osint-backend-dev
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+
+      # Redis config (backend reads REDIS_URL)
+      REDIS_URL: redis://redis:6379
+      REDIS_PASSWORD: ""
+
+      # Postgres config
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: osint_recon_dev
+      POSTGRES_USER: osint_dev_user
+      POSTGRES_PASSWORD: dev_password
+
+      # Security/dev keys
+      JWT_SECRET: dev_jwt_secret_key_change_in_production
+      ENCRYPTION_KEY: dev_32_char_encryption_key_change
+      ADMIN_TOKEN: dev_admin_token
+      DEMO_MODE: "true"
+      LOG_LEVEL: debug
+
+      # Third-party (Tavily) — your provided dev key
+      TAVILY_API_KEY: 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
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+      - job_dev_temp:/tmp/jobs
+    command: npm run dev
+    networks:
+      - osint-dev-network
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile.dev
+    container_name: osint-worker-dev
+    environment:
+      NODE_ENV: development
+
+      # Redis config
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+
+      # Postgres config (if needed by worker)
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: osint_recon_dev
+      POSTGRES_USER: osint_dev_user
+      POSTGRES_PASSWORD: dev_password
+
+      # App config
+      MAX_CONCURRENT_JOBS: 5
+      ENCRYPTION_KEY: dev_32_char_encryption_key_change
+      DEMO_MODE: "true"
+      LOG_LEVEL: debug
+      TAVILY_API_KEY: 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
+    depends_on:
+      - redis
+      - postgres
+      - backend
+    volumes:
+      - ./worker:/app
+      - /app/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+      - job_dev_temp:/tmp/jobs
+    command: npm run dev
+    networks:
+      - osint-dev-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: osint-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:3001
+      VITE_WS_URL: ws://localhost:3001
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    networks:
+      - osint-dev-network
+
+volumes:
+  redis_dev_data:
+  postgres_dev_data:
+  job_dev_temp:
+
+networks:
+  osint-dev-network:
+    driver: bridge

@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  redis-test:
+    image: redis:7-alpine
+    container_name: osint-redis-test
+    ports:
+      - "6380:6379"
+    networks:
+      - osint-test-network
+
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: osint-postgres-test
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=osint_recon_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+    volumes:
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - osint-test-network
+
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.test
+    container_name: osint-backend-test
+    environment:
+      - NODE_ENV=test
+      - PORT=3002
+      - REDIS_URL=redis://redis-test:6379
+      - POSTGRES_HOST=postgres-test
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=osint_recon_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+      - JWT_SECRET=test_jwt_secret
+      - ENCRYPTION_KEY=test_32_char_encryption_key_test
+      - ADMIN_TOKEN=test_admin_token
+      - DEMO_MODE=true
+      - LOG_LEVEL=error
+    depends_on:
+      - redis-test
+      - postgres-test
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: npm test
+    networks:
+      - osint-test-network
+
+  worker-test:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile.test
+    container_name: osint-worker-test
+    environment:
+      - NODE_ENV=test
+      - REDIS_URL=redis://redis-test:6379
+      - POSTGRES_HOST=postgres-test
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=osint_recon_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+      - ENCRYPTION_KEY=test_32_char_encryption_key_test
+      - DEMO_MODE=true
+      - LOG_LEVEL=error
+    depends_on:
+      - redis-test
+      - postgres-test
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: npm test
+    networks:
+      - osint-test-network
+
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    container_name: osint-frontend-test
+    environment:
+      - VITE_API_URL=http://localhost:3002
+      - CI=true
+    command: npm test -- --coverage --watchAll=false
+    networks:
+      - osint-test-network
+
+  integration-test:
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
+    container_name: osint-integration-test
+    environment:
+      - NODE_ENV=test
+      - API_URL=http://backend-test:3002
+      - REDIS_URL=redis://redis-test:6379
+      - POSTGRES_HOST=postgres-test
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=osint_recon_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+    depends_on:
+      - redis-test
+      - postgres-test
+      - backend-test
+    command: npm test
+    networks:
+      - osint-test-network
+
+networks:
+  osint-test-network:
+    driver: bridge

@@ -1,0 +1,71 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+export default function ScanForm() {
+  const [target, setTarget] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+  const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`${apiBase}/api/scan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target }),
+      });
+
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      const data = await res.json();
+
+      if (data.jobId) {
+        navigate(`/dashboard/${data.jobId}`);
+      } else {
+        throw new Error("No jobId returned from backend");
+      }
+    } catch (err: any) {
+      console.error("Scan start error:", err);
+      setError(err.message || "Failed to start scan");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-xl mx-auto bg-white rounded-lg shadow p-6">
+      <h2 className="text-2xl font-bold mb-4 text-gray-900">Start a New Scan</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="target" className="block text-sm font-medium text-gray-700">
+            Target Domain or IP
+          </label>
+          <input
+            id="target"
+            type="text"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            placeholder="example.com"
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {loading ? "Starting Scan..." : "Start Scan"}
+        </button>
+      </form>
+    </div>
+  );
+}
