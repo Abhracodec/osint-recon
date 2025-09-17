@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
-import { getJobStatus, getJobResults, createScanJob } from '../services/scanService';
+import { getJobStatus, getJobResults, createScanJob, storeJobResults } from '../services/scanService';
+import { tavilyService } from '../services/tavily';
 
 interface ScanRequestBody {
   target: string;
@@ -17,9 +18,21 @@ export async function scanRoutes(server: FastifyInstance) {
         return reply.code(400).send({ error: 'Target is required' });
       }
 
+      // First create a scan job to track progress
       const jobId = await createScanJob(target);
 
-      return { jobId }; // Frontend expects { jobId }
+      try {
+        // Perform the Tavily search
+        const searchResults = await tavilyService.search(target);
+        
+        // Store the results
+        await storeJobResults(jobId, searchResults);
+
+        return { jobId }; // Frontend expects { jobId }
+      } catch (searchErr) {
+        request.log.error('Tavily search failed:', searchErr);
+        return reply.code(500).send({ error: 'Search failed' });
+      }
     } catch (err) {
       request.log.error('Failed to create scan:', err);
       return reply.code(500).send({ error: 'Failed to create scan' });

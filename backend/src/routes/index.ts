@@ -5,10 +5,11 @@ import { addScanJob, getJobStatus, cancelJob } from '../services/queue';
 import { ScanRequest } from '../types';
 import { config } from '../utils/config';
 
-export function setupRoutes(server: FastifyInstance): void {
-  /**
-   * ✅ Start new reconnaissance scan
-   */
+export default async function setupRoutes(server: FastifyInstance, _options: unknown, done: () => void): Promise<void> {
+  try {
+    /**
+     * ✅ Start new reconnaissance scan
+     */
   server.post<{ Body: ScanRequest }>('/scan/start', async (request, reply) => {
     try {
       const scanRequest: ScanRequest = request.body;
@@ -36,7 +37,7 @@ export function setupRoutes(server: FastifyInstance): void {
 
       if (!status) return reply.code(404).send({ error: 'Job not found' });
 
-      return { status: status.state || status }; // ✅ frontend expects { status }
+      return { status }; // ✅ frontend expects { status }
     } catch (error) {
       logger.error('Failed to get job status:', error);
       return reply.code(500).send({ error: 'Failed to get job status' });
@@ -101,5 +102,11 @@ export function setupRoutes(server: FastifyInstance): void {
     }
   });
 
-  logger.info('API routes registered successfully');
+      logger.info('API routes registered successfully');
+    done();
+  } catch (error) {
+    logger.error('Failed to register routes:', error);
+    throw error;
+  }
 }
+

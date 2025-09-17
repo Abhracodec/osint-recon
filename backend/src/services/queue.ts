@@ -13,8 +13,9 @@ export async function setupJobQueue(): Promise<void> {
     const redisConnection = {
       host: redisUrl.hostname,
       port: parseInt(redisUrl.port || '6379'),
+      username: redisUrl.username || undefined,
       password: redisUrl.password || config.REDIS_PASSWORD,
-      tls: redisUrl.protocol === 'rediss:',
+      tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
     } as any;
 
     // Create queue

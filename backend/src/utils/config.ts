@@ -12,8 +12,11 @@ interface Config {
   REDIS_PASSWORD: string | undefined;
   REDIS_URL: string;
 
+  // Tavily
+  TAVILY_API_KEY: string;
+
   // PostgreSQL
-  DATABASE_URL?: string;
+  DATABASE_URL: string | undefined;
   POSTGRES_HOST: string;
   POSTGRES_PORT: number;
   POSTGRES_DB: string;
@@ -26,18 +29,18 @@ interface Config {
   ADMIN_TOKEN: string;
 
   // API Keys
-  SHODAN_API_KEY?: string;
-  GITHUB_OAUTH_TOKEN?: string;
-  WAPPALYZER_API_KEY?: string;
-  WHOISXML_API_KEY?: string;
-  GOOGLE_CUSTOM_SEARCH_KEY?: string;
-  GOOGLE_CUSTOM_SEARCH_CX?: string;
-  SECURITYTRAILS_API_KEY?: string;
-  CENSYS_API_ID?: string;
-  CENSYS_API_SECRET?: string;
+  SHODAN_API_KEY: string | undefined;
+  GITHUB_OAUTH_TOKEN: string | undefined;
+  WAPPALYZER_API_KEY: string | undefined;
+  WHOISXML_API_KEY: string | undefined;
+  GOOGLE_CUSTOM_SEARCH_KEY: string | undefined;
+  GOOGLE_CUSTOM_SEARCH_CX: string | undefined;
+  SECURITYTRAILS_API_KEY: string | undefined;
+  CENSYS_API_ID: string | undefined;
+  CENSYS_API_SECRET: string | undefined;
 
   // Tavily (web search + extraction)
-  TAVILY_API_KEY?: string;
+  TAVILY_API_KEY: string | undefined;
 
   // Rate Limiting
   RATE_LIMIT_REQUESTS_PER_MINUTE: number;
@@ -61,8 +64,8 @@ interface Config {
   CORS_ORIGIN: string;
 
   // SSL
-  SSL_CERT_PATH?: string;
-  SSL_KEY_PATH?: string;
+  SSL_CERT_PATH: string | undefined;
+  SSL_KEY_PATH: string | undefined;
 }
 
 // Required environment variables
@@ -82,7 +85,7 @@ validateConfig();
 
 // Redis URL helper
 function getRedisURL(): string {
-  const host = process.env.REDIS_HOST || 'redis';
+  const host = process.env.REDIS_HOST || '127.0.0.1';
   const port = process.env.REDIS_PORT || '6379';
   const password = process.env.REDIS_PASSWORD;
   if (password && password.length > 0) return `redis://:${password}@${host}:${port}`;

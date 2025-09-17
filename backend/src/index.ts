@@ -10,7 +10,7 @@ import { config } from './utils/config';
 import { logger } from './utils/logger';
 import { connectRedis } from './services/redis';
 import { connectDatabase } from './services/database';
-import { setupRoutes } from './routes';
+import setupRoutes from './routes';
 import { setupJobQueue } from './services/queue';
 import { errorHandler } from './middleware/errorHandler';
 import requestLogger from './middleware/requestLogger';

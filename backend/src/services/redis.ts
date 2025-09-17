@@ -2,33 +2,33 @@ import { createClient, RedisClientType } from 'redis';
 import { logger } from '../utils/logger';
 import { config } from '../utils/config';
 
-let redisClient: RedisClientType;
+export let redis: RedisClientType;
 
 export async function connectRedis(): Promise<RedisClientType> {
   try {
-    redisClient = createClient({
+    redis = createClient({
       url: config.REDIS_URL,
     });
 
-    redisClient.on('error', (err) => {
+    redis.on('error', (err: Error) => {
       logger.error('Redis client error:', err);
     });
 
-    redisClient.on('connect', () => {
+    redis.on('connect', () => {
       logger.info('Connected to Redis');
     });
 
-    redisClient.on('disconnect', () => {
+    redis.on('disconnect', () => {
       logger.warn('Disconnected from Redis');
     });
 
-    await redisClient.connect();
+    await redis.connect();
     
     // Test connection
-    await redisClient.ping();
+    await redis.ping();
     logger.info('Redis connection established successfully');
     
-    return redisClient;
+    return redis;
   } catch (error) {
     logger.error('Failed to connect to Redis:', error);
     throw error;
@@ -36,15 +36,15 @@ export async function connectRedis(): Promise<RedisClientType> {
 }
 
 export function getRedisClient(): RedisClientType {
-  if (!redisClient) {
+  if (!redis) {
     throw new Error('Redis client not initialized. Call connectRedis() first.');
   }
-  return redisClient;
+  return redis;
 }
 
-export async function disconnectRedis(): Promise<void> {
-  if (redisClient) {
-    await redisClient.quit();
+export async function closeRedis(): Promise<void> {
+  if (redis) {
+    await redis.quit();
     logger.info('Redis connection closed');
   }
 }
