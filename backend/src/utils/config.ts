@@ -14,6 +14,7 @@ interface Config {
   REDIS_URL: string;
 
   // PostgreSQL
+  DATABASE_URL?: string;
   POSTGRES_HOST: string;
   POSTGRES_PORT: number;
   POSTGRES_DB: string;
@@ -101,6 +102,7 @@ export const config: Config = {
   REDIS_URL: getRedisURL(),
 
   // PostgreSQL
+  DATABASE_URL: process.env.DATABASE_URL,
   POSTGRES_HOST: process.env.POSTGRES_HOST || 'postgres',
   POSTGRES_PORT: parseInt(process.env.POSTGRES_PORT || '5432', 10),
   POSTGRES_DB: process.env.POSTGRES_DB || 'osintdb',

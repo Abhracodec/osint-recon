@@ -1,5 +1,4 @@
 import { createClient, RedisClientType } from 'redis';
-import { config } from '../utils/config';
 import { logger } from '../utils/logger';
 
 let redisClient: RedisClientType;
@@ -7,12 +6,8 @@ let redisClient: RedisClientType;
 export async function connectRedis(): Promise<RedisClientType> {
   try {
     redisClient = createClient({
-      socket: {
-        host: process.env.REDIS_HOST || 'redis', // container name
-        port: Number(process.env.REDIS_PORT) || 6379,
-      },
-      password: process.env.REDIS_PASSWORD || undefined,
-    });
+  url: "rediss://default:AR8fAAImcDEyOGE0ODRmZGMxYmM0ZTUyOTNhZTg0MDgyYjdmMGJkZHAxNzk2Nw@vast-emu-7967.upstash.io:6379"
+});
 
     redisClient.on('error', (err) => {
       logger.error('Redis client error:', err);

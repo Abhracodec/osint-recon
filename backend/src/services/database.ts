@@ -6,16 +6,26 @@ let pool: Pool;
 
 export async function connectDatabase(): Promise<Pool> {
   try {
-    pool = new Pool({
-      host: config.POSTGRES_HOST,
-      port: config.POSTGRES_PORT,
-      database: config.POSTGRES_DB,
-      user: config.POSTGRES_USER,
-      password: config.POSTGRES_PASSWORD,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
+    const useUrl = Boolean(config.DATABASE_URL && config.DATABASE_URL.length > 0);
+
+    pool = useUrl
+      ? new Pool({
+          connectionString: config.DATABASE_URL,
+          ssl: { rejectUnauthorized: false },
+          max: 20,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 5000,
+        })
+      : new Pool({
+          host: config.POSTGRES_HOST,
+          port: config.POSTGRES_PORT,
+          database: config.POSTGRES_DB,
+          user: config.POSTGRES_USER,
+          password: config.POSTGRES_PASSWORD,
+          max: 20,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 2000,
+        });
 
     // Test connection
     const client = await pool.connect();
