@@ -14,20 +14,16 @@ export default function ScanForm() {
     setError(null);
 
     try {
-      console.log('Starting scan for target:', target);
       const res = await fetch("/api/scan/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target, targetType: "domain" }),
       });
 
-      console.log('Scan start response status:', res.status);
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const data = await res.json();
-      console.log('Scan start response data:', data);
 
       if (data.jobId) {
-        console.log('Navigating to dashboard with jobId:', data.jobId);
         navigate(`/dashboard/${data.jobId}`);
       } else {
         throw new Error("No jobId returned from backend");

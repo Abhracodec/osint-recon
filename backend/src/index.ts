@@ -12,6 +12,7 @@ import { connectRedis } from './services/redis';
 import { connectDatabase } from './services/database';
 import setupRoutes from './routes';
 import { setupJobQueue } from './services/queue';
+import { startWorker } from './jobs';
 import { errorHandler } from './middleware/errorHandler';
 import requestLogger from './middleware/requestLogger';
 
@@ -70,6 +71,9 @@ async function buildServer() {
     await connectRedis();
     await connectDatabase();
     await setupJobQueue();
+    
+    // --- Start Worker ---
+    startWorker();
 
     // --- Routes ---
     // This will prefix all routes with `/api`

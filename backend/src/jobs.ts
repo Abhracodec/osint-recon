@@ -1,23 +1,22 @@
 // backend/src/jobs.ts
-import { Worker, Job, QueueScheduler, Queue } from 'bullmq';
+import { Worker, Job, Queue } from 'bullmq';
 import { config } from './utils/config';
 import { logger } from './utils/logger';
 import { ScanRequest, JobProgress } from './types';
 import { createClient } from 'redis';
+import { storeJobResults } from './services/scanService';
 
-const QUEUE_NAME = 'scan';
+const QUEUE_NAME = 'osint-scan';
 
 function redisConnectionOptions() {
-  // Prefer explicit host/port environment vars (container-friendly)
-  const host = process.env.REDIS_HOST || 'redis';
-  const port = parseInt(process.env.REDIS_PORT || '6379', 10);
-  const password = process.env.REDIS_PASSWORD || undefined;
-
+  const redisUrl = new URL(config.REDIS_URL);
   return {
-    host,
-    port,
-    password,
-  };
+    host: redisUrl.hostname,
+    port: parseInt(redisUrl.port || '6379'),
+    username: redisUrl.username || undefined,
+    password: redisUrl.password || config.REDIS_PASSWORD,
+    tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
+  } as any;
 }
 
 /**
@@ -102,9 +101,7 @@ async function runModulesSimulated(jobData: any, updateProgress: (p: number, met
  * the frontend expects.
  */
 export function startWorker(): Worker {
-  // queue scheduler helps with stalled jobs, retries, etc.
   const connectionOptions = redisConnectionOptions();
-  const scheduler = new QueueScheduler(QUEUE_NAME, { connection: connectionOptions });
 
   const worker = new Worker(
     QUEUE_NAME,
@@ -153,6 +150,9 @@ export function startWorker(): Worker {
       await updateProgress(100, { currentModule: 'done', completedAt: result.completedAt });
 
       logger.info(`Job ${job.id} completed`, { result });
+
+      // Store results in Redis for retrieval
+      await storeJobResults(job.id as string, result);
 
       // return result as job return value
       return result;

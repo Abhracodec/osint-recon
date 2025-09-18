@@ -26,6 +26,7 @@ function App() {
             <Routes>
               <Route path="/" element={<ScanForm />} />
               <Route path="/dashboard/:jobId" element={<Dashboard />} />
+              <Route path="/test" element={<div className="max-w-4xl mx-auto"><h1 className="text-2xl font-bold">Test Page - Routing Works!</h1></div>} />
               <Route path="/results/:jobId" element={<Results />} />
             </Routes>
           </main>

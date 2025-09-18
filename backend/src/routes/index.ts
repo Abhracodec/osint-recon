@@ -2,10 +2,11 @@ import { FastifyInstance } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { addScanJob, getJobStatus, cancelJob } from '../services/queue';
+import { getJobResults } from '../services/scanService';
 import { ScanRequest } from '../types';
 import { config } from '../utils/config';
 
-export default async function setupRoutes(server: FastifyInstance, _options: unknown, done: () => void): Promise<void> {
+export default async function setupRoutes(server: FastifyInstance): Promise<void> {
   try {
     /**
      * ✅ Start new reconnaissance scan
@@ -50,16 +51,15 @@ export default async function setupRoutes(server: FastifyInstance, _options: unk
   server.get<{ Params: { jobId: string } }>('/scan/:jobId/results', async (request, reply) => {
     try {
       const { jobId } = request.params;
+      
+      // Get actual job results from Redis
+      const results = await getJobResults(jobId);
+      
+      if (!results) {
+        return reply.code(404).send({ error: 'Results not found or scan not completed' });
+      }
 
-      // Placeholder mock data
-      const results = {
-        jobId,
-        target: 'example.com',
-        modulesCovered: ['subdomains', 'certificates', 'techstack'],
-        findings: [],
-      };
-
-      return results; // ✅ frontend expects raw results
+      return results;
     } catch (error) {
       logger.error('Failed to get scan results:', error);
       return reply.code(500).send({ error: 'Failed to get scan results' });
@@ -103,7 +103,6 @@ export default async function setupRoutes(server: FastifyInstance, _options: unk
   });
 
       logger.info('API routes registered successfully');
-    done();
   } catch (error) {
     logger.error('Failed to register routes:', error);
     throw error;
